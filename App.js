@@ -1,7 +1,8 @@
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker'
 import * as Sharing from 'expo-sharing'
+import uploadToAnonymousFilesAsync from 'anonymous-files';
 
 export default function App() {
 const [selectedImage, setSelectedImage] = React.useState(null);
@@ -21,12 +22,18 @@ const [selectedImage, setSelectedImage] = React.useState(null);
       return;
     }
 
-    setSelectedImage({ localUri: pickerResult.uri });
+    // TODO: descobrir pq diabos essa droga não funciona no web. Tem a ver com o CORS segundo o console do chrome
+    if (Platform.OS === 'web') {
+      let remoteUri = await uploadToAnonymousFilesAsync(pickerResult.uri);
+      setSelectedImage({ localUri: pickerResult.uri, remoteUri });
+    } else {
+      setSelectedImage({ localUri: pickerResult.uri, remoteUri: null });
+    }
   };
 
   let openShareDialogAsync = async () => {
     if (!(await Sharing.isAvailableAsync())) {
-      alert("Eita! O compartilhamento não está disponível na sua plataforma");
+      alert(`The image is available for sharing at: ${selectedImage.remoteUri}`);
       return;
     }
 
